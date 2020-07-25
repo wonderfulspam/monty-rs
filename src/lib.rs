@@ -7,30 +7,39 @@ use xorshift::{Rng, SeedableRng, Xorshift128};
 
 #[derive(Default, Add, AddAssign)]
 pub struct Results {
-    changed: ResultSet,
+    switched: ResultSet,
     stayed: ResultSet,
+}
+
+impl Results {
+    pub fn calc_win_rate(&self) -> (f64, f64) {
+        (self.switched.wins as f64 / (self.switched.wins + self.switched.losses) as f64 * 100.,
+        self.stayed.wins as f64 / (self.stayed.wins + self.stayed.losses) as f64 * 100.)
+    }
+
 }
 
 impl std::fmt::Display for Results {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut result = String::from("Results:\n");
-        result.push_str(&format!("Changed:\n"));
+        let (switched_pct, stayed_pct) = self.calc_win_rate();
+        let mut result = String::from("Results\n---------------------\n");
+        result.push_str(&format!("Switched:\n"));
         result.push_str(&format!(
             "{} wins, {} losses - {:.8}% win rate",
-            self.changed.wins.to_formatted_string(&Locale::en),
-            self.changed.losses.to_formatted_string(&Locale::en),
-            calc_win_rate(self.changed.wins, self.changed.losses)
+            self.switched.wins.to_formatted_string(&Locale::en),
+            self.switched.losses.to_formatted_string(&Locale::en),
+            switched_pct
         ));
         result.push_str("\nStayed:\n");
         result.push_str(&format!(
             "{} wins, {} losses - {:.8}% win rate",
             self.stayed.wins.to_formatted_string(&Locale::en),
             self.stayed.losses.to_formatted_string(&Locale::en),
-            calc_win_rate(self.stayed.wins, self.stayed.losses)
+            stayed_pct
         ));
         result.push_str(&format!(
             "\n{} games played",
-            (self.changed.wins + self.changed.losses + self.stayed.wins + self.stayed.losses)
+            (self.switched.wins + self.switched.losses + self.stayed.wins + self.stayed.losses)
                 .to_formatted_string(&Locale::en)
         ));
         f.write_str(&result)
@@ -38,12 +47,8 @@ impl std::fmt::Display for Results {
 }
 #[derive(Default, Add, AddAssign)]
 struct ResultSet {
-    wins: u32,
-    losses: u32,
-}
-
-fn calc_win_rate(wins: u32, losses: u32) -> f64 {
-    wins as f64 / (wins + losses) as f64 * 100.
+    wins: u64,
+    losses: u64,
 }
 
 fn now() -> u64 {
@@ -99,15 +104,14 @@ pub fn play_simple(rng: &mut impl Rng) -> (bool, bool) {
     (final_choice == correct_door, switch_doors)
 }
 
-pub fn play_threaded(iterations: u32) -> Results {
+pub fn play_threaded(iterations: u64) -> Results {
     let threads = num_cpus::get();
 
-    let iterations_per_thread = iterations / threads as u32;
+    let iterations_per_thread = iterations / threads as u64;
     let mut handles = Vec::with_capacity(threads);
     for _ in 0..threads {
         let iters = iterations_per_thread.clone();
-        let handle = std::thread::spawn(move || play_multiple(iters));
-        handles.push(handle);
+        handles.push(std::thread::spawn(move || play_multiple(iters)));
     }
     let mut results = Results::default();
     for handle in handles {
@@ -116,17 +120,17 @@ pub fn play_threaded(iterations: u32) -> Results {
     results
 }
 
-pub fn play_multiple(iterations: u32) -> Results {
+pub fn play_multiple(iterations: u64) -> Results {
     let mut results = Results::default();
     let now = now();
     let states = [now, now];
     let mut rng: Xorshift128 = SeedableRng::from_seed(&states[..]);
     for _ in 0..iterations {
-        let (won, changed) = play_simple(&mut rng);
-        if changed && won {
-            results.changed.wins += 1;
-        } else if changed {
-            results.changed.losses += 1;
+        let (won, switched) = play_simple(&mut rng);
+        if switched && won {
+            results.switched.wins += 1;
+        } else if switched {
+            results.switched.losses += 1;
         } else if won {
             results.stayed.wins += 1;
         } else {
