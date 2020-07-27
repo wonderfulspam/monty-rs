@@ -29,4 +29,15 @@ $ ./target/release/monty-rs
 
 ```bash
 $ cargo bench
+$ xdg-open ./target/criterion/report/index.html
 ```
+
+Ensuing calls to `cargo bench` will provide comparisons to previous measurement.
+Depending on CPU/environment, false regressions/improvements may occasionally
+be reported, especially if there are many (5+) outliers within the 100 samples
+taken by Criterion.
+
+### Flamegraphs
+
+Interactive flamegraphs for debug and release mode are provided in this repo,
+generated with `flamegraph ./target/(debug|release)/monty-rs`.
