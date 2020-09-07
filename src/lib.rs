@@ -3,10 +3,10 @@
 //!
 //! See the [Wikipedia article](https://en.wikipedia.org/wiki/Monty_Hall_problem)
 //! for an explanation of the Monty Hall problem and its origins.
-//! 
+//!
 //! This project aims to be the fastest Monty Hall simulator in existence.
 //! To that end, some corners are cut:
-//! 
+//!
 //! - Random number generation is fast rather than properly random
 //! - The first option is always chosen as the initial guess
 //! - When an incorrect option is removed following the initial choice, the
@@ -15,17 +15,16 @@
 //! correct and there is only one possible option that can be removed) this
 //! makes no difference, and regardless, it doesn't really matter. What we
 //! care about is whether switching is more successful than not switching.
-//! 
+//!
 //! This is likely also the silliest Monty Hall problem simulator in existence.
 //! This is a non-goal.
 
 use derive_more::AddAssign; // Adds += overload for Results struct
 use num_cpus; // Gets no. of cpus to spawn threads on
 use num_format::{Locale, ToFormattedString}; // Allows printing 1000000 as 1,000,000
-use tinyvec::{array_vec, ArrayVec}; // The smallest possible (?) data structure that implements removal
 use rand_core::{RngCore, SeedableRng}; // Traits for generating random numbers and seeding
-use rand_xorshift::XorShiftRng; // The fastest possible (?) random number generator
-
+use rand_xorshift::XorShiftRng;
+use tinyvec::{array_vec, ArrayVec}; // The smallest possible (?) data structure that implements removal // The fastest possible (?) random number generator
 
 /// Inner struct for [Results](struct.Results.html) that tracks wins and losses for
 /// a given strategy
@@ -90,24 +89,75 @@ impl std::fmt::Display for Results {
     }
 }
 
-/// Play a single simulation of the Monty Hall problem.
-fn play_single(rng: &mut XorShiftRng, switch_doors: bool) -> bool {
-    let mut doors: ArrayVec<[i8; 3]> = array_vec![0, 1, 2];
-    let correct_door = (rng.next_u32() % 3) as i8;
-    let mut choice: i8 = 0; // https://xkcd.com/221/, sort of
+pub struct MontyHall<R> {
+    rng: R,
+}
 
-    // Find the first non-correct, non-chosen door and remove it
-    doors
-        .iter()
-        .position(|&x| x != correct_door && x != choice)
-        .map(|e| doors.remove(e));
+impl<R> MontyHall<R>
+where
+    R: RngCore,
+{
+    pub fn new_with_rng(rng: R) -> Self {
+        Self { rng }
+    }
+    /// Play a single simulation of the Monty Hall problem.
+    fn play_single(&mut self, switch_doors: bool) -> bool {
+        let mut doors: ArrayVec<[i8; 3]> = array_vec![0, 1, 2];
+        let correct_door = (self.rng.next_u32() % 3) as i8;
+        let mut choice: i8 = 0; // https://xkcd.com/221/, sort of
 
-    if switch_doors {
-        // Unwrapping is safe; we know there will always be at least one viable option left
-        choice = *doors.iter().find(|&&x| x != choice).unwrap();
+        // Find the first non-correct, non-chosen door and remove it
+        doors
+            .iter()
+            .position(|&x| x != correct_door && x != choice)
+            .map(|e| doors.remove(e));
+
+        if switch_doors {
+            // Unwrapping is safe; we know there will always be at least one viable option left
+            choice = *doors.iter().find(|&&x| x != choice).unwrap();
+        }
+
+        choice == correct_door
     }
 
-    choice == correct_door
+    /// Play a number of simulations.
+    ///
+    /// Half of the simulations use the switching strategy, the other half do not.
+    ///
+    /// ```rust
+    /// use monty_rs::{MontyHall, Results};
+    /// let mut monty = MontyHall::default();
+    /// let results: Results = monty.play_multiple(1_000_000);
+    /// ```
+    pub fn play_multiple(&mut self, iterations: u64) -> Results {
+        let half = iterations / 2;
+        let mut results = Results::default();
+        for _ in 0..half {
+            let switch = true;
+            let won = self.play_single(switch);
+            if won {
+                results.switched.wins += 1;
+            } else {
+                results.switched.losses += 1;
+            }
+        }
+        for _ in 0..half {
+            let switch = false;
+            let won = self.play_single(switch);
+            if won {
+                results.stayed.wins += 1;
+            } else {
+                results.stayed.losses += 1;
+            }
+        }
+        results
+    }
+}
+
+impl Default for MontyHall<XorShiftRng> {
+    fn default() -> Self {
+        Self::new_with_rng(XorShiftRng::seed_from_u64(0))
+    }
 }
 
 /// A wrapper around [play_multiple](fn.play_multiple.html) that splits the work by
@@ -124,44 +174,12 @@ pub fn play_threaded(iterations: u64) -> Results {
     let mut handles = Vec::with_capacity(threads);
     for _ in 0..threads {
         let iters = iterations_per_thread.clone();
-        handles.push(std::thread::spawn(move || play_multiple(iters)));
+        let mut monty = MontyHall::default();
+        handles.push(std::thread::spawn(move || monty.play_multiple(iters)));
     }
     let mut results = Results::default();
     for handle in handles {
         results += handle.join().unwrap();
-    }
-    results
-}
-
-/// Play a number of simulations.
-///
-/// Half of the simulations use the switching strategy, the other half do not.
-///
-/// ```rust
-/// use monty_rs::{Results, play_multiple};
-/// let results: Results = play_multiple(1_000_000);
-/// ```
-pub fn play_multiple(iterations: u64) -> Results {
-    let mut results = Results::default();
-    let mut rng = XorShiftRng::seed_from_u64(0);
-    let half = iterations / 2;
-    for _ in 0..half {
-        let switch = true;
-        let won = play_single(&mut rng, switch);
-        if won {
-            results.switched.wins += 1;
-        } else {
-            results.switched.losses += 1;
-        }
-    }
-    for _ in 0..half {
-        let switch = false;
-        let won = play_single(&mut rng, switch);
-        if won {
-            results.stayed.wins += 1;
-        } else {
-            results.stayed.losses += 1;
-        }
     }
     results
 }

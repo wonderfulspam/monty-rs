@@ -1,6 +1,6 @@
 [package]
 name = "monty-rs"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Emil Thorenfeldt <emt@magenta-aps.dk>"]
 edition = "2018"
 
@@ -17,7 +17,16 @@ rand_core = "0.5.1"
 [dev-dependencies]
 criterion = "0.3"
 assert_approx_eq = "1.1.0"
+rand = { version = "0.7.3", features = ["small_rng"]}
+rand_xoshiro = "0.4.0"
 
 [[bench]]
 name = "bench_play"
 harness = false
+
+[profile.bench]
+lto = "fat"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
