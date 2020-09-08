@@ -1,3 +1,5 @@
+use libc_print::libc_println;
+
 fn main() {
     // Allow passing an exponent, ie. the no. of zeros
     // Defaults to 9 = 1_000_000_000 iterations
@@ -8,5 +10,5 @@ fn main() {
         .expect("You must pass a valid integer");
     let iterations = 10u64.pow(pow);
     let results = monty_rs::play_threaded(iterations);
-    println!("{}", results);
+    libc_println!("{}", results);
 }
