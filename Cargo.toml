@@ -33,6 +33,6 @@ harness = false
 lto = "fat"
 
 [profile.release]
-lto = "fat"
+lto = "thin"
 codegen-units = 1
 debug = true
