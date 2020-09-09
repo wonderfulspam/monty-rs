@@ -14,7 +14,7 @@ function test_bin_exists () {
 
 # Run cachegrind and extract total number of instructions
 function run_cachegrind () {
-    INSTRUCTIONS=$(valgrind --tool=cachegrind --cachegrind-out-file=/tmp/cachegrind.out $1 $2 2>&1 | grep -oP "(I\s+refs:\s+)\K([\d,]+)")
+    INSTRUCTIONS=$(valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.$4.out $1 $2 2>&1 | grep -oP "(I\s+refs:\s+)\K([\d,]+)")
     INS=$(echo $INSTRUCTIONS | tr -d ',')
     INS_PER_SIM=$(echo "scale=3; $INS/$3" | bc)
     printf "%s (%g instructions per simulation)\n" $INSTRUCTIONS $INS_PER_SIM
@@ -78,9 +78,10 @@ if [ ! -z "$USE_CACHEGRIND" ]; then
     ITERS=$((10**$CACHEGRIND_ITERS)) 
     printf "Running cachegrind on %s simulations\n" $(numfmt --grouping $ITERS)
     echo -n "Total number of instructions (stable):  "
-    run_cachegrind /tmp/monty-rs-stable $CACHEGRIND_ITERS $ITERS
+    run_cachegrind /tmp/monty-rs-stable $CACHEGRIND_ITERS $ITERS stable
     echo -n "Total number of instructions (nightly): "
-    run_cachegrind ./target/release/monty-rs $CACHEGRIND_ITERS $ITERS
+    run_cachegrind ./target/release/monty-rs $CACHEGRIND_ITERS $ITERS nightly
+    echo "Cachegrind output printed to cachegrind.<toolchain>.out"
 fi
 
 ########################
