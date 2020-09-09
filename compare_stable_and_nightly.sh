@@ -27,13 +27,25 @@ USE_CACHEGRIND=
 CACHEGRIND_ITERS=5 # Number of simulations to run, given as an exponent of 10
 RERUN_REVERSE=
 
+_usage="Usage: $0 [-c] [-i value] [-r]
+
+Options:
+  -c            Enable cachegrind
+  -i <iters>    No. of simulations to run with cachegrind, given as an exponent of 10.
+                  Default 5, implies -c.
+
+  -r            Re-run hyperfine benchmark in reverse order
+  -h            Show usage
+"
+
 while getopts ci:rh arg
 do
     case $arg in
     c) USE_CACHEGRIND=1;;
-    i) CACHEGRIND_ITERS="$OPTARG";;
+    i) USE_CACHEGRIND=1; CACHEGRIND_ITERS="$OPTARG";;
     r) RERUN_REVERSE=1;;
-    h) printf "Usage: %s [-c] [-i value] [-r]\n" $0; exit 2;;
+    h) echo "$_usage"; exit 0;;
+    *) echo "$_usage"; exit 1;;
     esac
 done
 
@@ -51,11 +63,11 @@ fi
 ##  BINARY BUILDING   ##
 ########################
 echo -n "Building using stable toolchain:  "
-rustc +stable --version
+rustc +stable --version || exit 1;
 cargo +stable build -q --release
 cp ./target/release/monty-rs /tmp/monty-rs-stable
 echo -n "Building using nightly toolchain: "
-rustc +nightly --version
+rustc +nightly --version || exit 1;
 cargo +nightly build -q --release
 
 ########################
