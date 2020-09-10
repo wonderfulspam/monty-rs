@@ -23,9 +23,11 @@ use derive_more::AddAssign; // Adds += overload for Results struct
 use num_cpus; // Gets no. of cpus to spawn threads on
 use num_format::{Locale, ToFormattedString}; // Allows printing 1000000 as 1,000,000
 use rand_core::{RngCore, SeedableRng}; // Traits for generating random numbers and seeding
-use rand_xorshift::XorShiftRng;
-use tinyvec::{array_vec, ArrayVec}; // The smallest possible (?) data structure that implements removal // The fastest possible (?) random number generator
-
+use rand_xorshift::XorShiftRng; // The fastest possible (?) random number generator
+#[cfg(feature = "smallvec")]
+use smallvec::{smallvec, SmallVec};
+#[cfg(not(feature = "smallvec"))]
+use tinyvec::{array_vec, ArrayVec}; // The smallest possible (?) data structure that implements removal
 /// Inner struct for [Results](struct.Results.html) that tracks wins and losses for
 /// a given strategy
 #[derive(Default, AddAssign)]
@@ -101,8 +103,12 @@ where
         Self { rng }
     }
     /// Play a single simulation of the Monty Hall problem.
+    #[cfg(not(vecless))]
     fn play_single(&mut self, switch_doors: bool) -> bool {
+        #[cfg(not(feature = "smallvec"))]
         let mut doors: ArrayVec<[i8; 3]> = array_vec![0, 1, 2];
+        #[cfg(feature = "smallvec")]
+        let mut doors: SmallVec<[i8; 3]> = smallvec![0, 1, 2];
         let correct_door = (self.rng.next_u32() % 3) as i8;
         let mut choice: i8 = 0; // https://xkcd.com/221/, sort of
 
@@ -115,6 +121,19 @@ where
         if switch_doors {
             // Unwrapping is safe; we know there will always be at least one viable option left
             choice = *doors.iter().find(|&&x| x != choice).unwrap();
+        }
+
+        choice == correct_door
+    }
+
+    #[cfg(vecless)]
+    fn play_single(&mut self, switch_doors: bool) -> bool {
+        let correct_door = (self.rng.next_u32() % 3) as i8;
+        let mut choice: i8 = 0; // https://xkcd.com/221/, sort of
+
+        if switch_doors {
+            let non_correct = (1i8..=2).into_iter().find(|&x| x != correct_door).unwrap();
+            choice = (1i8..=2).into_iter().find(|&x| x != non_correct).unwrap();
         }
 
         choice == correct_door

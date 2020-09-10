@@ -325,7 +325,9 @@ dependencies = [
  "rand_core",
  "rand_xorshift",
  "rand_xoshiro",
- "tinyvec",
+ "smallvec",
+ "tinyvec 0.4.1",
+ "tinyvec 1.0.1",
 ]
 
 [[package]]
@@ -607,6 +609,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "smallvec"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fbee7696b84bbf3d89a1c2eccff0850e3047ed46bfcd2e92c29a2d074d57e252"
+
+[[package]]
 name = "syn"
 version = "1.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -641,6 +649,12 @@ name = "tinyvec"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d509a3e5acd065f0877e6db98d026d2900d57aa32abbb614a2cb959802c3ddf"
+
+[[package]]
+name = "tinyvec"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b78a366903f506d2ad52ca8dc552102ffdd3e937ba8a227f024dc1d1eae28575"
 
 [[package]]
 name = "unicode-width"

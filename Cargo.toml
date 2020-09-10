@@ -4,16 +4,20 @@ version = "0.2.1"
 authors = ["Emil Thorenfeldt <emt@magenta-aps.dk>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["tinyvec"]
+
 
 [dependencies]
-tinyvec = "0.4.1"
 derive_more = "0.99.9"
 num_cpus = "1.13.0"
 num-format = "0.4.0"
 rand_xorshift = "0.2.0"
 rand_core = "0.5.1"
 libc-print = "0.1.13"
+tinyvec = { version = "0.4.1", optional = true}
+tinyvec_v1 = { version = "1.0.1", optional = true, package = "tinyvec"}
+smallvec = { version = "1.4.2", optional = true}
 
 [dev-dependencies]
 criterion = "0.3"
