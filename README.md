@@ -10,7 +10,7 @@ To that end, some corners are cut:
 - The first option is always chosen as the initial guess
 - When an incorrect option is removed following the initial choice, the
 simulation does not randomly pick an option to remove, it simply removes
-the first option. Half the time (ie. when the initial choice is not
+the first incorrect option. 2/3 of the time (ie. when the initial choice is not
 correct and there is only one possible option that can be removed) this
 makes no difference, and regardless, it doesn't really matter. What we
 care about is whether switching is more successful than not switching.
