@@ -64,11 +64,11 @@ fi
 ########################
 echo -n "Building using stable toolchain:  "
 rustc +stable --version || exit 1;
-cargo +stable build -q --release
+cargo +stable build -q --release || exit 1;
 cp ./target/release/monty-rs /tmp/monty-rs-stable
 echo -n "Building using nightly toolchain: "
 rustc +nightly --version || exit 1;
-cargo +nightly build -q --release
+cargo +nightly build -q --release || exit 1;
 
 ########################
 ##     CACHEGRIND     ##

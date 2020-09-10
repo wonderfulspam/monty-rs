@@ -42,8 +42,10 @@ Benchmarks can be run separately with `cargo bench --bench <name of benchmark>`.
 ### Benchmarking stable vs nightly toolchain
 
 Use the provided `compare_stable_and_nightly.sh` script to compare the performance
-of release builds built with each toolchain. The benchmark runs 1,000,000 iterations
-using [Hyperfine](https://github.com/sharkdp/hyperfine).
+of release builds built with each toolchain. The benchmark runs 1,000,000,000 iterations
+using [Hyperfine](https://github.com/sharkdp/hyperfine) and optionally performs
+`cachegrind` analysis. Run `./compare_stable_and_nightly.sh -h` for a full set of
+options.
 
 ### Checking memory usage
 
@@ -63,5 +65,5 @@ valgrind --tool=massif --massif-out-file=massif.out ./target/release/monty-rs 5 
 # Find all occurrences of 'mem_heap_B', cut out the value and grab the biggest one
 grep mem_heap_B massif.out | sed -e 's/mem_heap_B=\(.*\)/\1/' | sort -g | tail -n 1 \
 # Find the biggest value and display it along with the neighbouring mem_heap_extra_B
-| xargs -i grep -A1 'mem_heap_B={}' massif.out
+| xargs -i grep -m 1 -A1 'mem_heap_B={}' massif.out
 ```
