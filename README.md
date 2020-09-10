@@ -25,6 +25,16 @@ $ cargo build --release
 $ ./target/release/monty-rs
 ```
 
+### Optional features
+
+The following features can be enabled when building the binary by passing
+`--features <feature>` to `cargo`:
+
+* `single-threaded` - use only a single core instead of spawning threads
+* `smallvec` - use `smallvec` instead of `tinyvec`
+* `tinyvec_v1` - use `tinyvec` 1.0 instead of 0.4
+* `vecless` - don't use vecs at all
+
 ### Benchmarking with Criterion
 
 ```bash
